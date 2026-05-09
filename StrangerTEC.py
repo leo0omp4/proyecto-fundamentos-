@@ -9,51 +9,110 @@ Título de la asignación. Proyecto 1: Stranger TEC
 Requerimientos del sistema: Tkinter, conexión a la rasp, biblioteca pyserial instalada
 """
 
-#Importación de bibliotecas
+# IMPORTACIÓN DE BIBLIOTECAS
 import tkinter as tk
 from tkinter import messagebox
 import random, serial, threading, time
 from PIL import Image, ImageTk
+import os
 
+# CONFIGURACIÓN DE COLORES
 NEGRO = "#000000"
 ROJO = "#FF0000"
 GRIS = "#505050"
 TEXTO = "#FFFFFF"
 
+# CONFIGURACIÓN DE FUENTES
 FUENTE_TITULO = ("Times New Roman", 34, "bold")
 FUENTE_SUB = ("Fixedsys", 18, "bold")
 FUENTE_NORMAL = ("Fixedsys", 14)
 FUENTE_INPUT = ("Garamond", 28, "bold")
 
-#Configuración de hardware, intento de conexión serial con la Rasp para comunicación USB 
+# CONFIGURACIÓN DE HARDWARE Y CONEXIÓN SERIAL
+
+# Se intenta abrir conexión serial USB con la Raspberry Pi Pico
 try:
+    
+    # COM3 = puerto serial usado en Windows
+    # 115200 = velocidad de transmisión
+    # timeout = tiempo máximo de espera
     ser = serial.Serial('COM3', 115200, timeout=1) #Ajustar puerto según sistema operativo
+    
+    # Mensaje de éxito en consola
     print(">>> Conexión USB exitosa.") #Mensaje de éxito en conexión serial
+
+# Captura cualquier error durante la conexión
 except Exception as e: #Manejo de error en caso de falla en conexión serial
-    ser = None #Variable ser se establece como None para indicar que no hay conexión serial
+    
+    # Si falla, la variable queda vacía
+    ser = None
+    
+    # Se imprime el error exacto
     print(f">>> Error Serial: {e}") #Mensaje de error detallado en caso de falla en conexión serial
 
-#Función para enviar comandos a la Rasp a través de la USB
+# FUNCIÓN PARA ENVIAR DATOS A LA RASP
 def enviar_a_pico(comando):
-    if ser and ser.is_open: #Verificación de que la conexión serial está abierta antes de intentar enviar datos
+    
+    # Verifica que exista conexión y esté abierta
+    if ser and ser.is_open:
+
         try:
-            ser.write(f"{comando}\n".encode()) #Envío del comando a través de la conexión serial
+            # Envía el comando seguido de salto de línea
+            ser.write(f"{comando}\n".encode())
+
         except:
+            # Error genérico de envío
             print("Error USB") #Mensaje de error en caso de falla al enviar datos a través de la conexión serial
 
-#Lógica de juego
-palabras = ["HOLA", "TECNICO", "RADIO", "MORSE", "CODIGO", "PICO", "LUCES", "ESTUDIANTE", "LOGICA", "RECEPTOR"] #Lista de palabras definidas para el juego
-random.shuffle(palabras) #Mezcla aleatoria de palabras para cada partida
-velocidad_actual = 0.15; ronda_actual = 1; jugador_actual = 1; puntajes = {1: 0, 2: 0} #Variables globales para controlar la velocidad del código Morse, ronda actual, jugador actual y puntajes
-palabra_objetivo = ""; modo_juego = ""; tiempo_inicio = 0 #Variables globales para almacenar la palabra objetivo actual, el modo de juego seleccionado, y el tiempo de inicio del turno
-tiempo_j1 = 0 #Variable global para almacenar el tiempo utilizado por el jugador 1 en su turno
-multiplicador_dificultad = 1.0 #Variable global para almacenar el multiplicador de dificultad
+# VARIABLES DEL JUEGO
+# Lista de palabras usadas durante las rondas
+palabras = ["HOLA", "TECNICO", "RADIO", "MORSE", "CODIGO", "PICO", "LUCES", "ESTUDIANTE", "LOGICA", "RECEPTOR"]
 
+# Mezcla aleatoriamente las palabras
+random.shuffle(palabras)
+
+# Variables globales para controlar la velocidad del código Morse, ronda actual, jugador actual y puntajes
+velocidad_actual = 0.15; ronda_actual = 1; jugador_actual = 1; puntajes = {1: 0, 2: 0}
+
+# Variables globales para almacenar la palabra objetivo actual, el modo de juego seleccionado, y el tiempo de inicio del turno
+palabra_objetivo = ""; modo_juego = ""; tiempo_inicio = 0
+
+# Variable global para almacenar el tiempo utilizado por el jugador 1 en su turno
+tiempo_j1 = 0
+
+# Variable global para almacenar el multiplicador de dificultad
+multiplicador_dificultad = 1.0
+
+# CONFIGURACIÓN DE LA VENTANA PRINCIPAL
 ventana = tk.Tk()
 ventana.state("zoomed")
 ventana.title("StrangerTEC - Torneo Universitario") #Título de la ventana
 ventana.config(bg=NEGRO)
 
+# CARGA DE IMAGEN DE FONDO
+
+# Obtiene la ruta donde está el archivo actual
+ruta_actual = os.path.dirname(__file__)
+
+# Construye la ruta completa de la imagen
+ruta_imagen = os.path.join(ruta_actual, "fondo.jpg")
+
+# Abre la imagen
+imagen = Image.open(ruta_imagen)
+
+# Redimensiona la imagen
+imagen = imagen.resize((1920, 1080))
+
+# Convierte la imagen para tkinter
+fondo = ImageTk.PhotoImage(imagen)
+
+# Label que contiene el fondo
+label_fondo = tk.Label(ventana, image=fondo)
+
+# Coloca el fondo ocupando toda la ventana
+label_fondo.place(x=0, y=0, relwidth=1, relheight=1)
+
+# TÍTULO PRINCIPAL
 titulo = tk.Label(
     ventana,
     text="STRANGERTEC",
@@ -72,6 +131,7 @@ linea = tk.Frame(
 
 linea.place(relx=0.5, y=90, anchor="center")
 
+# SUBTÍTULO
 subtitulo = tk.Label(
     ventana,
     text="MORSE COMMUNICATION SYSTEM",
@@ -81,6 +141,7 @@ subtitulo = tk.Label(
 )
 subtitulo.pack()
 
+# LABEL DE INFORMACIÓN
 label_info = tk.Label(
     ventana,
     text="SELECCIONE UN MODO",
@@ -90,6 +151,7 @@ label_info = tk.Label(
 )
 label_info.pack(pady=20)
 
+# LABEL PARA MOSTRAR PALABRAS DEL JUEGO
 label_palabra = tk.Label(
     ventana,
     text="",
@@ -99,6 +161,7 @@ label_palabra = tk.Label(
 )
 label_palabra.pack(pady=30)
 
+# CAJA DE TEXTO DONDE EL JUGADOR ESCRIBE
 entrada = tk.Entry(
     ventana,
     font=FUENTE_INPUT,
@@ -111,6 +174,7 @@ entrada = tk.Entry(
 )
 entrada.pack(pady=20)
 
+# LABEL DE PUNTAJES
 label_puntajes = tk.Label(
     ventana,
     text="J1: 0 pts | J2: 0 pts",
@@ -120,7 +184,7 @@ label_puntajes = tk.Label(
 )
 label_puntajes.pack(pady=10)
 
-#Canvas para mostrar el estado del reloj de tiempo durante el turno de cada jugador (luz roja cuando el tiempo está corriendo, gris cuando está detenido)
+# CANVAS DEL TEMPORIZADOR
 canvas_timer = tk.Canvas(
     ventana,
     width=50,
@@ -130,8 +194,11 @@ canvas_timer = tk.Canvas(
 )
 canvas_timer.pack(pady=5)
 
+# LUZ INDICADORA DEL TIEMPO
+    # Dibuja un círculo dentro del canvas que cambia de color según el estado
 luz_timer = canvas_timer.create_oval(10, 10, 30, 30, fill="#444") 
 
+# LABEL DE ESTADO DEL RELOJ
 label_timer_status = tk.Label(
     ventana,
     text="RELOJ DETENIDO",
@@ -141,7 +208,7 @@ label_timer_status = tk.Label(
 )
 label_timer_status.pack()
 
-#Funciones para manejo de configuración del torneo, reinicio manual del juego, inicio de rondas, verificación de progreso del jugador, y mostrar resultados finales al concluir el torneo
+# Funciones para manejo de configuración del torneo, reinicio manual del juego, inicio de rondas, verificación de progreso del jugador, y mostrar resultados finales al concluir el torneo
 def abrir_configuracion():
     vent_config = tk.Toplevel(ventana)
     vent_config.title("Ajustes de Torneo")
@@ -162,10 +229,13 @@ def abrir_configuracion():
     
     tk.Button(vent_config, text="Cambiar Velocidad", command=cambiar_v).pack(pady=5)
 
+    # LÍNEA DIVISORIA
     tk.Frame(vent_config, height=2, bd=1, relief="sunken").pack(fill="x", padx=20, pady=10)
 
+    # CONFIGURACIÓN DE DIFICULTAD
     tk.Label(vent_config, text="Multiplicador de Dificultad:", font=("Fixedsys", 12, "bold")).pack(pady=5)
-    
+
+    # FUNCIÓN PARA ACTUALIZAR DIFICULTAD
     def actualizar_mult(val):
         global multiplicador_dificultad
         multiplicador_dificultad = float(val)
@@ -175,8 +245,10 @@ def abrir_configuracion():
     escala_dif.set(multiplicador_dificultad) 
     escala_dif.pack(pady=10)
     
+    # BOTÓN PARA CERRAR CONFIGURACIÓN
     tk.Button(vent_config, text="Cerrar y Guardar", command=vent_config.destroy, bg="#3498DB", fg="white").pack(pady=20)
 
+# FUNCIÓN PARA REINICIAR EL JUEGO MANUALMENTE
 def resetear_juego_manual():
     global ronda_actual, jugador_actual, puntajes, palabras
     ronda_actual = 1
@@ -191,58 +263,113 @@ def resetear_juego_manual():
     canvas_timer.itemconfig(luz_timer, fill="gray")
     print(">>> Puntajes y rondas reseteados manualmente.")
 
+# FUNCIÓN PARA INICIAR UNA NUEVA RONDA
 def iniciar_ronda(nuevo_modo=None):
+
+    # Variables globales que serán modificadas
     global ronda_actual, jugador_actual, palabra_objetivo, tiempo_inicio, modo_juego
+    
+    # Si se recibe un modo nuevo, se actualiza
     if nuevo_modo: modo_juego = nuevo_modo
+
+    # Si se superan las 10 rondas termina el juego
     if ronda_actual > 10: mostrar_resultados(); return
     
     if jugador_actual == 1:
         palabra_objetivo = palabras[ronda_actual - 1] 
     
+    # Actualiza texto informativo
     label_info.config(text=f"RONDA {ronda_actual}/10 | Turno: JUGADOR {jugador_actual}")
     
+    # Limpia entrada anterior
     entrada.delete(0, tk.END)
     entrada.focus()
     
+    # MODO ESCUCHA Y TRANSMISIÓN
     if modo_juego == "escucha y transmisión":
         label_palabra.config(text="PRESTA ATENCIÓN")
+
+        # Envía la palabra a la pico a través del buzzer
         ventana.after(500, lambda: enviar_a_pico(f"PLAY:{palabra_objetivo}"))
+    
+    # En modo simple muestra la palabra directamente
     else: 
         label_palabra.config(text=palabra_objetivo)
-        
+
+    # Reinicia temporizador
     tiempo_inicio = 0 
+
+    # Apaga indicador del reloj
     canvas_timer.itemconfig(luz_timer, fill="gray")
+
+    # Actualiza estado visual
     label_timer_status.config(text="Reloj detenido", fg="gray")
     
+# FUNCIÓN PARA VERIFICAR EL PROGRESO DEL JUGADOR
 def verificar_progreso(event):
+    # Variables globales modificables
     global jugador_actual, ronda_actual, tiempo_j1, tiempo_inicio, puntajes
     
+    # Obtiene texto ingresado y lo convierte a mayúscula
     intento = entrada.get().upper()
     
+    # CONTROL DE LONGITUD DEL TEXTO
+    # Si el usuario escribe más letras de las necesarias
     if len(intento) > len(palabra_objetivo):
+
+        # Elimina caracteres sobrantes
         entrada.delete(len(palabra_objetivo), tk.END)
+
+        # Ajusta variable intento
         intento = intento[:len(palabra_objetivo)]
 
+    # ENVÍO DE LETRAS A LA RASP
+
+    # Verifica que exista texto válido
     if intento and (event is None or (hasattr(event, 'char') and (event.char.isalnum() or event.char in "+-"))):
-        enviar_a_pico(f"LUZ:{intento[-1]}")
         
+        # Envía última letra escrita
+        enviar_a_pico(f"LUZ:{intento[-1]}")
+    
+    # INICIO DEL TEMPORIZADOR
+
+    # Cuando se escribe la primera letra
     if len(intento) == 1 and tiempo_inicio == 0:
+
+        # Guarda tiempo inicial
         tiempo_inicio = time.time()
+        
+        # Cambia color del reloj a rojo
         canvas_timer.itemconfig(luz_timer, fill="#E74C3C") 
+        
+        # Cambia estado visual
         label_timer_status.config(text="¡TIEMPO CORRIENDO!", fg="#E74C3C")
 
+    # SI TODAVÍA NO TERMINA LA PALABRA
     if not intento or len(intento) < len(palabra_objetivo):
         return
-
+    
+    # CUANDO EL JUGADOR COMPLETA LA PALABRA
     if len(intento) == len(palabra_objetivo):
+
+        # Desactiva escritura temporalmente
         entrada.unbind("<KeyRelease>") 
         
+        # CÁLCULO DE TIEMPO Y PUNTAJE
+
+        # Calcula tiempo total usado
         tiempo_final = time.time() - tiempo_inicio
+
+        # Cuenta letras correctas
         aciertos = sum(1 for i in range(len(palabra_objetivo)) if intento[i] == palabra_objetivo[i])
         
+        # Bono basado en velocidad
         bono_velocidad = max(10, int(100 - tiempo_final))
+        
+        # Fórmula del puntaje bas
         puntos_base = int((aciertos / len(palabra_objetivo)) * bono_velocidad * multiplicador_dificultad)
         
+        # TURNO DEL JUGADOR 1
         if jugador_actual == 1:
             tiempo_j1 = tiempo_final
             puntajes[1] += puntos_base
@@ -255,7 +382,8 @@ def verificar_progreso(event):
 
             jugador_actual = 2
             ventana.after(1500, lambda: [iniciar_ronda(), entrada.bind("<KeyRelease>", verificar_progreso)])
-            
+        
+        # TURNO DEL JUGADOR 2
         else:
             multiplicador = 1.0
             if 0 < tiempo_final < tiempo_j1:
@@ -267,9 +395,11 @@ def verificar_progreso(event):
             if aciertos > 0: enviar_a_pico("WIN")
             else: enviar_a_pico("LOSE")
 
+            # FINAL DE RONDA EN MODO SIMPLE
             if modo_juego == "simple":
                 ventana.after(500, lambda: enviar_a_pico("ROUND_END"))
-
+            
+            # MOSTRAR RESPUESTA EN MODO ESCUCHA
             if modo_juego == "escucha y transmisión":
                 label_palabra.config(text=f"ERA: {palabra_objetivo}", fg="#E67E22")
 
@@ -283,6 +413,7 @@ def verificar_progreso(event):
                                          entrada.bind("<KeyRelease>", verificar_progreso),
                                          label_palabra.config(fg="#2C3E50")])
 
+# FUNCIÓN PARA MOSTRAR RESULTADOS FINALES
 def mostrar_resultados():
     final_msg = f"TORNEO FINALIZADO\n\nJ1: {puntajes[1]} pts\nJ2: {puntajes[2]} pts"
     messagebox.showinfo("Resultados", final_msg)
@@ -291,6 +422,7 @@ def mostrar_resultados():
     entrada.delete(0, tk.END)
     entrada.unbind("<KeyRelease>")
 
+# FUNCIÓN PARA APLICAR ESTILO A BOTONES
 def estilo_boton(btn, color):
     btn.config(
         bg=color,
@@ -305,11 +437,13 @@ def estilo_boton(btn, color):
         pady=10
     )
 
+# FRAME CONTENEDOR DE BOTONES
 f_botones = tk.Frame(
     ventana,
     bg=NEGRO
 ); f_botones.pack(side="bottom", pady=50)
 
+# BOTÓN DE MODO SIMPLE
 btn_simple = tk.Button(
     f_botones,
     text="MODO SIMPLE",
@@ -324,7 +458,7 @@ btn_simple = tk.Button(
 estilo_boton(btn_simple, "#145A32")
 btn_simple.grid(row=0, column=0, padx=20)
 
-
+# BOTÓN DE MODO ESCUCHA Y TRANSMISIÓN
 btn_morse = tk.Button(
     f_botones,
     text="ESCUCHA Y TRANSMISIÓN",
@@ -341,6 +475,7 @@ btn_morse = tk.Button(
 estilo_boton(btn_morse, "#7D6608")
 btn_morse.grid(row=0, column=1, padx=20)
 
+# BOTÓN DE CONFIGURACIÓN
 btn_config = tk.Button(
     ventana,
     text="⚙ AJUSTES",
@@ -350,6 +485,7 @@ btn_config = tk.Button(
 estilo_boton(btn_config, "#1F618D")
 btn_config.place(relx=0.02, rely=0.02)
 
+# BOTÓN DE RESETEO
 btn_reset = tk.Button(
     ventana,
     text="🔄 RESET",
@@ -359,30 +495,36 @@ btn_reset = tk.Button(
 estilo_boton(btn_reset, "#922B21")
 btn_reset.place(relx=0.12, rely=0.02)
 
+# FUNCIÓN PARA ESCUCHAR DATOS SERIAL
 def escuchar_serial():
     while ser and ser.is_open:
         try:
             linea = ser.readline().decode('utf-8').strip()
 
+            # DETECCIÓN DE TECLAS DESDE LA PICO
             if linea.startswith("KEY:"):
 
-                # SOLO bloquear:
-                # escucha y transmisión + jugador 1
+                # BLOQUEO ESPECIAL
+                # En modo escucha y transmisión el jugador 1 no puede escribir
                 if modo_juego == "escucha y transmisión" and jugador_actual == 1:
                     continue
 
+                # Extrae letra enviada
                 letra = linea.split(":")[1]
                 ventana.after(0, lambda l=letra: insertar_letra(l))
 
         except:
             break
 
+# FUNCIÓN PARA INSERTAR LETRAS EN EL ENTRY
 def insertar_letra(l):
     if l:
         entrada.insert(tk.END, l)
         verificar_progreso(None)
 
+# HILO DE LECTURA SERIAL
 hilo_lectura = threading.Thread(target=escuchar_serial, daemon=True)
 hilo_lectura.start()
 
+# EJECUCIÓN PRINCIPAL DEL PROGRAMA
 ventana.mainloop()
